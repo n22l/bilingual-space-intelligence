@@ -1,4 +1,4 @@
-# Bilingual Space Intelligence
+# Technical Research Engine
 
 > Evidence-grounded AI research for U.S.–China aerospace analysis.
 
