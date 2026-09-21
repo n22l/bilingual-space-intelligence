@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Credentials and local settings
+.env
+.env.*
+!.env.example
+
+# Local source corpora and generated artifacts
+data/raw/
+data/processed/
+data/indexes/
+data/cache/
+outputs/
+.cache/
+
+# OS files
+.DS_Store
+Thumbs.db

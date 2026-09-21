@@ -1,0 +1,51 @@
+# Data-source policy
+
+**Status: Planned policy; no collection has been completed.**
+
+## Source priorities
+
+1. Primary official sources: government agencies, regulators, public mission records, program documentation, and original aerospace organization/company statements.
+2. Authoritative technical publications with clear authorship, methods, dates, and references.
+3. High-quality secondary reporting when necessary to fill gaps or identify primary material.
+
+Potential source organizations include NASA, FAA, other U.S. government bodies, CNSA, CMSA, Chinese government bodies, and aerospace organizations and companies. This is a candidate list, not an ingested corpus or endorsement.
+
+Prefer original English/Chinese documents over unattributed translations and reposts. Preserve provenance when a document is republished. Official and corporate sources establish attributable statements but may not independently substantiate performance or economic claims.
+
+## Initial corpus boundaries
+
+The first corpus should be deliberately small and manually curated around reusable rockets, launch cadence, operational reuse, and publicly documented economic factors. Before collection, choose a date range, system coverage, language balance, and supported document formats.
+
+Include documents because they address defined research questions. Record exclusions and gaps to make selection bias visible. Do not infer profitability from cadence alone, or equate launch price with internal cost.
+
+## Planned document metadata
+
+| Field | Convention |
+| --- | --- |
+| Title | Original title; translated title may be stored separately. |
+| URL | Canonical source URL, with version/archive information where available and permitted. |
+| Publisher | Organization responsible for the document. |
+| Publication date | Date and available precision; unknown if unavailable. Track revisions separately. |
+| Language | Original document language; identify multilingual material. |
+| Country/system | Relevant country or countries and named program/vehicle; distinct from publisher location. |
+| Source type | Official record, announcement, company statement, technical publication, or secondary reporting. |
+| Retrieval date | Date of access, separate from publication and event dates. |
+| Copyright/license notes | Applicable terms, known reuse permissions, restrictions, and review notes. |
+| Document ID/version | Stable identifier and content hash or version reference when practical. |
+| Parsing notes | Format, extraction issues, missing pages, OCR use, and locator limitations. |
+
+Event dates and the temporal scope of claims should be captured when supported by the text. Retain original passages and source locations wherever storage is permitted. Dates and facts must not be silently filled from assumptions.
+
+## Rights and access
+
+Inclusion in a research corpus does **not** grant redistribution rights. Public accessibility is not equivalent to an open license, and the project's MIT license does not cover third-party materials.
+
+Review applicable access and reuse terms before ingestion or publication. Do not bypass access restrictions. Where redistribution is not permitted or is unclear, keep source files out of the public repository and publish permitted metadata, links, and independently authored annotations instead. Review excerpts, translations, and derived artifacts separately.
+
+The default Git policy excludes local raw/processed corpora, indexes, and generated outputs. Adding any source material publicly requires an explicit rights review.
+
+## Evidence handling
+
+Preserve corrections, updates, and conflicting statements rather than silently replacing historical evidence. Record when a conclusion is valid only as of a particular date. Retain the difference between source assertions, demonstrated events, analyst calculations, and uncertain inferences.
+
+Label translations and link them to original text. Review domain terminology and negation before using a translation to support a claim. Follow the evidence-status framework in the [root README](../README.md#evidence-status-framework).
