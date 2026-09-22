@@ -1,166 +1,104 @@
 # Technical Research Engine
 
-> Evidence-grounded AI research for U.S.–China aerospace analysis.
+> Evidence-grounded AI research infrastructure for complex technical subjects.
 
-**Status: Early development — local retrieval demo implemented**
+An independent applied-AI engineering project developing an evidence-grounded research workflow for complex technical subjects, starting with English- and Chinese-language aerospace sources.
 
-Bilingual Space Intelligence is an independent applied-AI engineering project exploring how multilingual retrieval, NLP, generative AI, structured evidence extraction, and evaluation can support rigorous aerospace research. **US–China Space Watch / 中美航天观察**, an independent publication, provides a real-world application environment.
+**Status: Early development.** An initial local text-ingestion, passage-retrieval, and retrieval-evaluation workflow is implemented. Broader research capabilities remain under development. The public demonstration uses synthetic documents; application to other technical subjects is planned and has not been evaluated.
 
-This repository includes a working offline lexical-retrieval demo for English and Chinese text, source metadata, and a top-five evidence evaluation command. It uses explicitly synthetic fixtures; no real research corpus, held-out benchmark, generated answers, or deployed service is included.
+## Current implementation
+
+- Ingest prepared UTF-8 text documents with a JSON source manifest.
+- Segment text at blank lines and retrieve original-language passages with lexical TF-IDF cosine similarity.
+- Preserve source metadata and return paragraph references such as `document-id:p2`.
+- Evaluate whether labeled supporting evidence appears among the first five retrieved passages.
+
+No generated answers, automatic translation, automated fact verification, contradiction resolution, hallucination detection, or unsupported-question detection are implemented. Retrieval scores are not confidence estimates.
 
 ## Run the demo
 
-Requires Python 3.10+ and Git; no third-party Python packages or hosted API. From the repository root:
+Requires Python 3.10+ and Git on PATH. No third-party Python packages, credentials, model downloads, or network services are required. From the repository root:
 
 ```powershell
-python -B src/space_search.py --mode demo search --question "refurbishment replacement parts"
-python -B src/space_search.py --mode demo search --question "翻修 工时 零件"
-python -B src/space_search.py --mode demo evaluate
+python -B src/research_search.py --mode demo search --question "refurbishment replacement parts"
+python -B src/research_search.py --mode demo search --question "翻修 工时 零件"
+python -B src/research_search.py --mode demo evaluate
 python -B -m unittest discover -s tests -v
 ```
 
-See [local setup, privacy boundary, and private corpus instructions](docs/local-retrieval.md). Private material must live in an external sibling `space-watch-private/` directory, outside every Git working tree. `.gitignore` is only a secondary safeguard. Demo mode never reads private configuration. Private mode requires `SPACE_DATA_DIR` and saves results there without printing passages.
+The old `src/space_search.py` command remains a compatibility entry point. Private mode prefers `TECH_RESEARCH_DATA_DIR`, falling back to `SPACE_DATA_DIR` only when the new variable is absent. It writes results to the configured external non-Git directory without printing passages. Demo mode ignores both settings. See the [local guide](docs/local-retrieval.md).
 
-Retrieval uses English words and Chinese character sequences. It does not implement automatic translation or general cross-language semantic matching. Search scores do not establish answerability.
+## Why this exists
 
-## The problem
+Complex technical research involves fragmented sources, changing terminology, multilingual material, and incomplete or conflicting information. Useful research requires source provenance, primary-source verification, explicit uncertainty, and reproducible evaluation. Retrieved text must remain distinguishable from interpretation and verified conclusions.
 
-Reliable comparative U.S.–China aerospace research spans English and Chinese sources, different terminology and transliterations, fragmented primary-source information, changing program timelines, official announcements, demonstrated hardware milestones, and incomplete public information.
-
-A generic LLM response is insufficient when source provenance and evidence status matter. The central research problem is distinguishing what has actually happened from what has been announced or planned, and from what remains proposed or uncertain.
-
-## Project objective
-
-The planned **Bilingual Space Intelligence Engine** will retrieve, analyze, compare, translate, classify, and cite public-source information about U.S. and Chinese space programs. Evidence retrieval and evaluation will take priority over fluent answer generation.
-
-The intended flow below is a proposal, not an implemented architecture:
+## Implemented architecture
 
 ```text
-Public-source documents
+Prepared UTF-8 documents + source manifest
         ↓
-Ingestion / parsing
+Validated local ingestion → blank-line passage segmentation
         ↓
-Metadata + normalization
+In-memory TF-IDF retrieval ← research query
         ↓
-Indexing / retrieval
+Ranked original passages + source metadata + paragraph references
         ↓
-Research question
-        ↓
-Evidence retrieval
-        ↓
-Structured claim generation
-        ↓
-Citation / provenance
-        ↓
-Evaluation
+Retrieval evaluation against manually labeled passage IDs (k = 5)
 ```
 
-Research questions will query the document index; document and passage provenance should be retained throughout the process. See [proposed architecture](docs/architecture.md).
+Search and evaluation are separate commands; evaluation runs search for each labeled question. The index is rebuilt per command. No saved index, database, service, or model provider is required. See [architecture](docs/architecture.md) for implemented and planned components.
 
-## Planned structured output
+## Current evaluation
 
-The following is a field template, not a research answer or an implemented API:
+The current evaluation checks whether **at least one** labeled supporting passage appears among the first five results for each labeled answerable question. Hit rate at 5 is the number of such hits divided by the number of answerable questions. Two manually labeled unanswerable demo questions are inspection-only and excluded from this denominator.
+
+The bundled smoke set contains eight invented documents, ten passages, and six answerable questions. It is not a held-out benchmark. Its results do not establish answer accuracy, full evidence coverage, citation entailment, translation quality, cross-language retrieval quality, or automatic detection of unsupported questions. The [evaluation plan](docs/evaluation-plan.md) separates current scoring from future assessment.
+
+## Domain architecture
 
 ```text
-Claim:                    <one bounded assertion>
-Evidence:                 <original passage and location>
-Source:                   <document ID, title, publisher, URL>
-Publication date:         <source date or unknown>
-Country/system:           <relevant country and named program/system>
-Original language:        <language of the evidence passage>
-Translation:              <translation when appropriate, separately labeled>
-Evidence status:          <one category below, with rationale>
-Confidence / uncertainty: <evidence limits, conflicts, and missing information>
+Core research engine (implemented local retrieval/evaluation)
+    ├── Aerospace Intelligence — first application; synthetic demo implemented
+    └── Additional technical domain — planned, not implemented or evaluated
 ```
 
-Future records should also preserve event dates, the temporal scope of a claim, retrieval dates, and links to all supporting or conflicting passages. Uncertainty should be explained; model-generated confidence numbers will not be treated as calibrated probabilities.
+The core does not require an aerospace taxonomy, jurisdiction, or fixed pair of languages. An optional `domain` metadata field preserves an explicit source label; it does not activate specialized processing or filtering. Aerospace concepts and the proposed status vocabulary live under [src/domains/aerospace/](src/domains/aerospace/README.md). A future domain configuration layer will be driven by real requirements rather than empty integrations. See the [domain model](docs/domain-model.md).
 
-## Evidence-status framework
+The intended multilingual research infrastructure is initially tested with English- and Chinese-language synthetic aerospace material. Tokenization still uses ASCII alphanumeric tokens and Chinese characters/bigrams. Accepting other language tags does not establish retrieval support or quality in those languages. Entity normalization, terminology alignment, translation-aware and cross-language retrieval remain planned.
 
-These proposed labels describe the status of a specific claim or milestone as of a stated date, not the credibility of an entire organization.
+## First application: Aerospace Intelligence
 
-| Status | Intended meaning |
-| --- | --- |
-| DEMONSTRATED | Evidence supports that the specified event or capability was demonstrated under stated conditions. |
-| OPERATIONAL | Evidence supports routine or in-service use within the specified scope. |
-| TESTING | The specified capability is undergoing tests; the intended outcome is not established. |
-| PLANNED | A responsible organization has announced an intended activity or program. |
-| TARGETED | A date, cadence, performance level, or other goal is stated as an aim rather than an achieved result. |
-| PROPOSED | A concept or option has been put forward without evidence of a committed implementation plan. |
-| DELAYED | Evidence explicitly supports a postponement relative to an identified earlier schedule. |
-| CANCELLED | Evidence explicitly supports termination of the specified effort. |
-| UNKNOWN | Available evidence is insufficient, ambiguous, or unresolved. |
+Reusable-rocket economics and launch-cadence research for **US–China Space Watch / 中美航天观察** provides the first real-world research application. It includes launch vehicles, missions, recovery, reuse, providers, and the distinction between demonstrated capability and announced plans. Launch counts alone cannot establish profitability.
 
-Separating these states prevents a future target from being reported as an achievement or a test from being treated as routine service. An official announcement is evidence of what was announced; it is not automatically independent verification of the underlying capability.
-
-Claims should be split when labels would otherwise overlap: a test demonstration and a future operational target are separate assertions. Missing updates alone do not establish delay or cancellation. Annotation rules will be refined before evaluation.
-
-## Initial use case
-
-The first planned development use case supports research for:
-
-**Reusable Rockets: The Hidden Economics Behind U.S. and Chinese Launch Cadence**
-
-A guiding question is:
-
-> How does launch cadence affect the economics and operational value of reusable launch systems in the United States and China?
-
-The first real research corpus will deliberately be small and curated. It will prioritize public primary sources wherever practical, rather than attempt to index the entire aerospace internet. Candidate source categories include NASA, FAA, other U.S. government sources, CNSA, CMSA, Chinese government sources, aerospace organizations and companies, and technical publications. No real-source collection is included; the runnable demo uses invented documents only.
-
-The research should separate observed launches and reuse events from announced cadence targets and economic assumptions. Launch counts alone cannot establish profitability; missing cost, refurbishment, utilization, and demand evidence should remain explicit.
-
-## Planned technical areas
-
-- Python and document ingestion/parsing
-- Embeddings, semantic retrieval, and metadata filtering
-- Retrieval-augmented generation (RAG) and generative AI
-- Bilingual English/Chinese NLP
-- Entity extraction and normalization
-- Chinese–English terminology alignment
-- Structured generation and claim verification
-- Data engineering, automated evaluation, and citation verification
-
-Frameworks, storage systems, embedding models, and model providers have not been selected.
-
-## Evaluation philosophy
-
-The project will be evaluated on evidence quality, not only on how convincing generated answers sound. Planned evaluation will examine retrieval relevance, citation correctness, claim–source consistency, evidence-status classification, unsupported-claim rate, bilingual terminology handling, entity resolution, and answer completeness.
-
-A manually verified evaluation set should include answerable, unanswerable, ambiguous, and conflicting-source questions. The implemented evaluation checks expected-passage hits in the top five on authored synthetic fixtures; unsupported questions are inspection-only. Broader metrics and real-corpus results require reviewed data and actual experiments. The [evaluation plan](docs/evaluation-plan.md) describes the proposed protocol.
+This is a reusable software project. Editorial material, production source collections, and research conclusions remain private and subject to human review. No real research corpus or private evaluation results are distributed here.
 
 ## Roadmap
 
-| Phase | Planned scope |
+| Phase | Status and scope |
 | --- | --- |
-| Phase 0 — Specification | Initial repository, architecture, evidence schema, source policy, and evaluation design documented. |
-| Phase 1 — Minimal retrieval system | Local text ingestion, metadata, passage retrieval, and source references implemented for synthetic demo data; real-corpus validation remains. |
-| Phase 2 — Grounded answer generation | Structured claims, evidence-status classification, and bilingual support. |
-| Phase 3 — Evaluation | Manually verified question set, retrieval and citation evaluation, and unsupported-claim testing. |
-| Phase 4 — Expansion | Larger corpus, entity normalization, terminology alignment, and more sophisticated research workflows. |
+| 0 — Foundation | Implemented: local text ingestion, passage retrieval, metadata preservation, retrieval evaluation. |
+| 1 — Robust ingestion | Planned: broader parsing, metadata validation, normalization, deduplication. |
+| 2 — Multilingual evidence retrieval | Planned: entity normalization, terminology alignment, improved cross-language retrieval. |
+| 3 — Structured evidence | Planned: evidence records, domain-specific statuses, provenance, claim/evidence relationships. |
+| 4 — Citation-grounded generation | Planned: evidence-based answers, citations, unsupported-claim controls. |
+| 5 — Evaluation expansion | Planned: ranking metrics, citation correctness, claim consistency, unsupported-claim rate, multilingual evaluation. |
+| 6 — Additional domain | Planned only after aerospace validation: one new domain to test reusable abstractions. |
 
-Evaluation design begins in Phase 0; reference questions should be prepared before system tuning. Possible later work includes knowledge graphs, multimodal document/image retrieval, media provenance, and automated aerospace visualization pipelines. These are exploratory directions, not commitments.
+Evaluation accompanies each phase. See the [roadmap](docs/roadmap.md) for scope and validation gates.
 
-See the [expanded roadmap](docs/roadmap.md).
+## Public/private boundary
 
-## Relationship to US–China Space Watch
-
-US–China Space Watch / 中美航天观察 provides real research questions and publication production use cases. The AI system is intended to improve research traceability, source discovery, fact checking, evidence organization, and bilingual research.
-
-This repository is an AI engineering project. Editorial decisions and conclusions remain subject to human review; the system should expose missing or conflicting evidence rather than automatically generate unsupported conclusions.
-
-## Academic independence
-
-This is an independent personal project, not an official University of Colorado Boulder project. It does not contain or publish course assignments. Concepts learned through graduate study may inform independently developed work. No university sponsorship or endorsement is implied.
+Reusable code, documentation, tests, the evaluation framework, and synthetic demonstration data belong in public Git. Production documents, copyrighted/local source extracts, editorial notes, unpublished research, research outputs, and private evaluation sets remain outside **every Git working tree**. Ignore rules are secondary safeguards. See [public/private separation](docs/public-private-boundary.md) and [source policy](docs/data-sources.md).
 
 ## Repository guide
 
-- [Local retrieval guide](docs/local-retrieval.md): runnable commands, private mode, and evaluation schemas
-- [Architecture](docs/architecture.md): proposed components and evidence flow
-- [Roadmap](docs/roadmap.md): phased scope and completion criteria
-- [Evaluation plan](docs/evaluation-plan.md): proposed annotation and assessment protocol
-- [Data sources](docs/data-sources.md): source priorities, metadata, and rights policy
-- [src/](src/README.md), [tests/](tests/README.md), [data/](data/README.md), [examples/](examples/README.md), [notebooks/](notebooks/README.md): intended future uses
+- [Local retrieval guide](docs/local-retrieval.md): commands, metadata, private setup, and compatibility.
+- [Architecture](docs/architecture.md), [domain model](docs/domain-model.md), and [roadmap](docs/roadmap.md).
+- [Evaluation plan](docs/evaluation-plan.md), [data sources](docs/data-sources.md), and [public/private boundary](docs/public-private-boundary.md).
+- [Source](src/README.md), [tests](tests/README.md), [data](data/README.md), [examples](examples/README.md), and [notebooks](notebooks/README.md).
 
-## License
+## Academic independence and license
 
-Original project code and documentation are provided under the [MIT License](LICENSE), chosen for straightforward reuse with attribution. Third-party documents, excerpts, images, and datasets retain their respective rights; repository licensing does not grant permission to redistribute them.
+This is an independent personal project, not an official University of Colorado Boulder project. It does not publish course assignments or imply university sponsorship or endorsement.
+
+Original code, documentation, and synthetic fixtures use the [MIT License](LICENSE). Third-party materials retain their respective rights; source inclusion does not grant redistribution permission.

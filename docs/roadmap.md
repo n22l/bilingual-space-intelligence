@@ -1,47 +1,17 @@
 # Roadmap
 
-**Current stage: Phase 1 — Minimal local retrieval milestone.** Text ingestion, metadata, paragraph retrieval, synthetic demo evaluation, and external private-mode boundaries are implemented. Real primary-source corpus curation and validation remain outstanding. Later phases remain planned, with no delivery-date commitments.
+**Current stage: Phase 0 — Foundation.** Local text ingestion, original-language passage retrieval, source metadata, paragraph references, and synthetic retrieval evaluation work today. Broader capabilities are planned. Phase numbers describe scope, not release dates; evaluation begins now and accompanies every addition.
 
-## Phase 0 — Specification
+| Phase | Scope | Validation gate |
+| --- | --- | --- |
+| 0 — Foundation (implemented) | Prepared UTF-8 text ingestion, in-memory lexical retrieval, metadata preservation, expected-passage hit@5, external private mode. | Preserve synthetic regression and privacy tests; establish a reviewed private retrieval baseline. |
+| 1 — Robust ingestion (planned) | Broader document parsing, improved metadata validation, document normalization, deduplication, traceable versions and locations. | Inspect extraction fidelity and evidence references against original documents; do not silently accept missing content. |
+| 2 — Multilingual evidence retrieval (planned) | Entity normalization, terminology alignment, improved cross-language retrieval. | Compare English/Chinese retrieval to the lexical baseline; inspect false entity merges and terminology failures. |
+| 3 — Structured evidence (planned) | Evidence records, domain-selected statuses, provenance, claim/evidence relationships. | Review original passages, status rationales, dates, units, and scope independently. |
+| 4 — Citation-grounded generation (planned) | Evidence-based answers, citations, explicit uncertainty, unsupported-claim controls. | Measure citation support and unsupported assertions; fluent output is insufficient. |
+| 5 — Evaluation expansion (planned) | Additional retrieval/ranking metrics, citation correctness, claim/evidence consistency, unsupported-claim rate, multilingual assessment. | Define denominators, annotation protocol, held-out cases, and limitations before reporting scores. |
+| 6 — Additional domain (planned) | Add one technical domain only after aerospace validation; refactor from actual second-domain requirements. | Demonstrate reuse with reviewed data rather than empty schemas or integrations. |
 
-Define the architecture, conceptual evidence schema, status taxonomy, source policy, and evaluation design. This repository supplies an initial draft of each.
+## Recommended next engineering task
 
-Before real-corpus use, settle the corpus boundaries, source rights review, metadata conventions, and annotation rules. Only synthetic fixtures and smoke questions exist; no real research corpus or reviewed research benchmark is included.
-
-## Phase 1 — Minimal retrieval system
-
-Proposed v0.1 scope:
-
-- Curate a small English/Chinese primary-source collection for reusable-launch and launch-cadence research.
-- Record source metadata and parsing limitations.
-- Parse the selected formats into traceable passages.
-- Establish a simple retrieval baseline and return passages with inspectable citations.
-- Prepare manually checked reference questions before tuning retrieval.
-
-Completion should mean a researcher can trace retrieved passages back to the exact source location and inspect failures. Fluent answer generation is not a Phase 1 requirement.
-
-## Phase 2 — Grounded answer generation
-
-Add structured claims linked to passages, evidence-status classification, and explicit uncertainty or abstention. Add bilingual question handling and labeled translations with original text retained.
-
-Completion should require claim-level citations and manual review of status distinctions, translation fidelity, and unsupported assertions. Quantitative acceptance thresholds remain to be defined after baseline experiments.
-
-## Phase 3 — Evaluation
-
-Formalize and version the manually verified question set. Run retrieval, citation, evidence-status, and unsupported-claim evaluations; include unanswerable questions and conflicting or outdated evidence.
-
-Publish actual methods, denominators, limitations, and error analyses alongside measured results. Protect held-out questions from prompt and model tuning. Evaluation preparation begins earlier; this phase consolidates systematic measurement.
-
-## Phase 4 — Expansion
-
-Expand only after errors in the small corpus are understood. Candidate improvements include additional documents, entity normalization, Chinese–English terminology alignment, temporal comparisons, and richer research workflows.
-
-Assess each expansion against the existing baseline and extend coverage without concealing earlier failure cases.
-
-## Possible later work
-
-Knowledge graphs, multimodal document/image retrieval, media provenance, and automated aerospace visualization pipelines may be explored if evidence needs justify them. They are not guaranteed deliverables.
-
-## Recommended next task
-
-Privately curate ten primary-source documents and ten manually verified questions (including two unsupported cases) for the reusable-launch use case. Specify inclusion dates, languages, document formats, rights constraints, expected evidence locations, and unanswerable cases before using real research inputs.
+Create a versioned, manually reviewed private aerospace retrieval benchmark and failure report using the existing evaluator. Freeze document/passage versions, label supporting passages and unsupported questions, separate development and held-out cases, and record hit@5 with error analysis. Inspect any existing private collections locally before curating additions; this repository makes no assertion about their completeness or validation. Keep production text and private results outside Git. Do not add answer generation yet.

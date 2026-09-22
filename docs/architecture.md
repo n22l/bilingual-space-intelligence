@@ -1,46 +1,44 @@
-# Proposed architecture
+# Architecture
 
-**Status: Local lexical-retrieval milestone implemented; broader architecture remains proposed.**
+## Implemented
 
-`src/space_search.py` loads a JSON manifest and UTF-8 text, splits paragraphs, builds in-memory TF-IDF vectors, and returns original passages plus source metadata. Demo mode reads only synthetic fixtures. Private mode validates an external non-Git directory and writes result JSON only there. There are no network calls, saved indexes, caches, generated answers, or translation models. See the [local guide](local-retrieval.md).
+`src/research_search.py` contains the domain-independent local workflow. Keeping ingestion, retrieval, metadata validation, and evaluation in one small standard-library module avoids unnecessary abstractions. `src/space_search.py` delegates to its CLI for compatibility.
 
-Components below describe the broader planned system and are expected to evolve.
+1. Explicitly select bundled synthetic demo data or an external private directory.
+2. Validate `documents.json` and its relative file references; read prepared UTF-8 text.
+3. Split at blank lines into original-language paragraphs with `id:pN` references.
+4. Build in-memory TF-IDF vectors and rank positive cosine matches for the query; break ties by passage ID.
+5. Return up to five passages, scores, source metadata, and paragraph numbers.
+6. For evaluation, repeat retrieval for each question and compute expected-passage hit rate at 5 on labeled answerable cases.
 
-## Scope and flow
+Demo JSON is printed. Private JSON is saved only in the validated external directory; fixed terminal messages avoid exposing text, queries, and paths. No network requests, persistent indexes, caches, generated answers, translation models, or evidence-status classification exist. Original paragraph content is retained, with surrounding whitespace stripped during segmentation; references locate extracted text, not original PDF pages.
 
-The proposed system starts with curated public documents and ends with inspectable evidence records. Retrieval should be useful independently of answer generation.
+## Core/domain separation
 
-1. **Source intake:** maintain a source manifest, rights notes, retrieval dates, and document identifiers. Preserve versions or content hashes when permitted.
-2. **Ingestion and parsing:** extract text and document structure from selected formats. Retain headings, page numbers, paragraph identifiers, and original-language text. Flag extraction failures; do not silently treat broken text as complete.
-3. **Metadata and normalization:** validate required fields, preserve unknown dates, distinguish publication dates from event dates, and record original entity names alongside proposed normalized identifiers.
-4. **Indexing:** split text into passages with stable document/version references and source locations. Compare a simple lexical baseline with semantic retrieval before choosing a more complex approach.
-5. **Question and retrieval:** accept a research question, language, and optional metadata filters. Return ranked passages with provenance. Future bilingual query expansion should preserve the original query and record transformations.
-6. **Structured claims:** derive bounded assertions from retrieved passages, assign evidence status with a rationale, and attach supporting and conflicting evidence. Abstain where evidence is insufficient.
-7. **Citation and provenance checks:** verify that each cited location resolves and that the cited passage supports the claim. A valid URL alone does not establish support.
-8. **Evaluation:** assess retrieval separately from generation and retain reproducible experiment settings and error analyses.
+The core requires no jurisdiction, aerospace entity, or status vocabulary. Optional `domain` metadata is preserved without inference or filtering. Language-tag syntax is accepted independently from the current ASCII/Chinese tokenizer, which has only English/Chinese retrieval fixtures.
 
-## Proposed data contracts
+[src/domains/aerospace/](../src/domains/aerospace/README.md) documents the first application and its proposed annotation taxonomy. These files are not runtime plugins. The [domain model](domain-model.md) defines the current metadata contract and planned extension points. There is no universal evidence-status enum.
 
-| Record | Planned fields |
-| --- | --- |
-| Document | ID, title, URL, publisher, publication date, language, country/system, source type, retrieval date, rights notes, version/hash where practical |
-| Passage | ID, document/version ID, original text, location, language, parsing warnings |
-| Claim | Assertion, country/system, event date or period, as-of date, evidence status and rationale, supporting/conflicting passage IDs, uncertainty |
-| Translation | Original passage ID, translated text, source/target languages, method and review status |
-| Research result | Question, retrieved passages, claims, citations, unresolved gaps, relevant system configuration |
+## Retrieval and verification
 
-These are conceptual contracts, not implemented schemas. Unknown values must remain explicit. Preserve date precision and avoid inventing exact dates from month-only or year-only sources.
+```text
+SOURCE
+  ↓ ingestion and retrieval (implemented)
+RETRIEVED PASSAGE
+  ↓ researcher assesses relevance
+POTENTIAL EVIDENCE
+  ↓ human checks original source, scope, date, and qualifiers
+HUMAN-VERIFIED EVIDENCE
+  ↓ reasoned link to a bounded assertion
+SUPPORTED CLAIM
+```
 
-The status vocabulary is defined in the [root README](../README.md#evidence-status-framework). Labels apply to scoped assertions: a demonstrated landing does not establish operational reuse. Source reliability, claim support, and milestone status are separate judgments.
+Only the first transition is automated. Evaluation compares retrieved IDs to human-authored labels; it does not verify the source or conclusion. A matching URL or high score is not proof of factual support. Original source text remains the authoritative evidence input. Future translations must be labeled derivatives linked to originals.
 
-## Bilingual handling
+## Planned architecture
 
-Keep Chinese and English source text intact. Translations should be labeled derivatives linked to originals. Preserve names, units, qualifiers, negation, and distinctions such as target versus achievement. Entity aliases and transliterations should remain reviewable; uncertain matches must not be silently merged.
+Prepared or parsed documents → validated metadata and versions → retrieval → structured evidence records → citation-grounded generation → independently evaluated claims.
 
-## Boundaries and unresolved choices
+Future parsing should retain page/section locations and extraction warnings. Document hashes and corpus versions should stabilize evidence labels. Entity normalization must preserve original names and uncertain matches. A later evidence-record layer may select a domain vocabulary with explicit review rationales; planned translation records would preserve source/target language, method, and review status.
 
-Phase 1 should be a local, minimal retrieval workflow over a deliberately small corpus. No service architecture, cloud deployment, model provider, vector database, or orchestration framework is selected.
-
-Before implementation, decide the initial formats, corpus size and date range, citation locator convention, language balance, storage format, and retrieval baseline. Handle document content as untrusted input: embedded instructions must not override system behavior. Secrets and restricted source files must stay out of Git.
-
-For launch economics, label source-reported values, measured events, and analyst assumptions separately. Any future calculations should expose inputs, units, time windows, and missing variables.
+Generation, contradiction handling, claim support checks, multilingual query expansion, and metadata filtering are not implemented. No database, deployment framework, or model provider has been selected. Introduce modules only when working functionality warrants them, and a second domain only after the first workflow is validated. Treat source instructions as untrusted document content, never as instructions to the engine.
