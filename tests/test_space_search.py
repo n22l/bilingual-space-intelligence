@@ -14,13 +14,19 @@ from unittest.mock import patch
 
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location("space_search", ROOT / "src" / "space_search.py")
+spec = importlib.util.spec_from_file_location("research_search", ROOT / "src" / "research_search.py")
 app = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(app)
 
 
 class RetrievalTests(unittest.TestCase):
     def setUp(self):
+        # Tests must not inherit a user's production-data selection.
+        environment = patch.dict(os.environ)
+        environment.start()
+        self.addCleanup(environment.stop)
+        os.environ.pop("TECH_RESEARCH_DATA_DIR", None)
+        os.environ.pop("SPACE_DATA_DIR", None)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.private = Path(self.temp.name).resolve()
@@ -47,7 +53,8 @@ class RetrievalTests(unittest.TestCase):
                 for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.relative_to(ROOT).parts}
 
     def test_demo_without_private_access(self):
-        with patch.dict(os.environ, {"SPACE_DATA_DIR": str(self.private / "does-not-exist")}), patch.object(
+        with patch.dict(os.environ, {"SPACE_DATA_DIR": str(self.private / "does-not-exist"),
+                                    "TECH_RESEARCH_DATA_DIR": str(self.private / "also-absent")}), patch.object(
                 app, "external_directory", side_effect=AssertionError("Private access forbidden")):
             code, out, err = self.run_app(["--mode", "demo", "evaluate"])
         self.assertEqual(code, 0)
@@ -204,6 +211,52 @@ class RetrievalTests(unittest.TestCase):
         with patch.object(app, "DEMO", self.private / "demo"), patch.object(Path, "is_symlink", return_value=True):
             with self.assertRaises(app.SafeError):
                 app.demo_directory()
+
+    def test_generic_private_setting_precedence_and_legacy_fallback(self):
+        self.corpus()
+        with patch.dict(os.environ, {"TECH_RESEARCH_DATA_DIR": str(self.private),
+                                    "SPACE_DATA_DIR": str(ROOT)}):
+            self.assertEqual(app.private_directory(), self.private)
+            code, out, err = self.run_app(["--mode", "private", "evaluate"])
+            self.assertEqual(code, 0)
+            self.assertNotIn(str(self.private), out + err)
+        self.assertEqual(len(list(self.private.glob("result-*.json"))), 1)
+        with patch.dict(os.environ, {"SPACE_DATA_DIR": str(self.private)}):
+            self.assertEqual(app.private_directory(), self.private)
+            for invalid in ("", str(ROOT), str(self.private / "absent")):
+                with patch.dict(os.environ, {"TECH_RESEARCH_DATA_DIR": invalid}):
+                    with self.assertRaises(app.SafeError):
+                        app.private_directory()
+
+    def test_optional_domain_and_language_metadata_without_taxonomy(self):
+        self.corpus()
+        manifest_path = self.private / "documents.json"
+        records = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertNotIn("domain", app.load_passages(self.private)[0]["source"])
+        for language in ("en", "zh", "zh-Hans", "fr"):
+            records[0].update(language=language, domain="synthetic-test")
+            manifest_path.write_text(json.dumps(records), encoding="utf-8")
+            source = app.load_passages(self.private)[0]["source"]
+            self.assertEqual(source["language"], language)
+            self.assertEqual(source["domain"], "synthetic-test")
+        for field, invalid in (("language", "English Chinese"), ("language", "en_US"),
+                               ("domain", ""), ("domain", 42)):
+            broken = {**records[0], field: invalid}
+            manifest_path.write_text(json.dumps([broken]), encoding="utf-8")
+            with self.assertRaises(app.SafeError):
+                app.load_passages(self.private)
+
+    def test_legacy_and_generic_cli_match(self):
+        for command in (["evaluate"], ["search", "--question", "refurbishment replacement parts"],
+                        ["search", "--question", "翻修 工时 零件"]):
+            results = []
+            for script in ("research_search.py", "space_search.py"):
+                completed = subprocess.run([sys.executable, "-B", str(ROOT / "src" / script),
+                                            "--mode", "demo", *command], capture_output=True,
+                                           encoding="utf-8", check=True)
+                self.assertEqual(completed.stderr, "")
+                results.append(json.loads(completed.stdout))
+            self.assertEqual(*results)
 
 
 if __name__ == "__main__":

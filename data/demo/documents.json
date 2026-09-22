@@ -6,7 +6,8 @@
     "source_url": "synthetic:demo-en-cadence",
     "publication_date": "unknown",
     "language": "en",
-    "file": "demo-en-cadence.txt"
+    "file": "demo-en-cadence.txt",
+    "domain": "aerospace"
   },
   {
     "id": "demo-zh-cadence",
@@ -15,7 +16,8 @@
     "source_url": "synthetic:demo-zh-cadence",
     "publication_date": "unknown",
     "language": "zh",
-    "file": "demo-zh-cadence.txt"
+    "file": "demo-zh-cadence.txt",
+    "domain": "aerospace"
   },
   {
     "id": "demo-en-cost",
@@ -24,7 +26,8 @@
     "source_url": "synthetic:demo-en-cost",
     "publication_date": "unknown",
     "language": "en",
-    "file": "demo-en-cost.txt"
+    "file": "demo-en-cost.txt",
+    "domain": "aerospace"
   },
   {
     "id": "demo-zh-cost",
@@ -33,7 +36,8 @@
     "source_url": "synthetic:demo-zh-cost",
     "publication_date": "unknown",
     "language": "zh",
-    "file": "demo-zh-cost.txt"
+    "file": "demo-zh-cost.txt",
+    "domain": "aerospace"
   },
   {
     "id": "demo-en-weather",
@@ -51,7 +55,8 @@
     "source_url": "synthetic:demo-zh-glossary",
     "publication_date": "unknown",
     "language": "zh",
-    "file": "demo-zh-glossary.txt"
+    "file": "demo-zh-glossary.txt",
+    "domain": "aerospace"
   },
   {
     "id": "demo-en-library",
