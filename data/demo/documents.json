@@ -1,0 +1,74 @@
+[
+  {
+    "id": "demo-en-cadence",
+    "title": "Synthetic cadence notebook",
+    "publisher": "Synthetic demo author (fictional fixture)",
+    "source_url": "synthetic:demo-en-cadence",
+    "publication_date": "unknown",
+    "language": "en",
+    "file": "demo-en-cadence.txt"
+  },
+  {
+    "id": "demo-zh-cadence",
+    "title": "合成发射节奏笔记",
+    "publisher": "Synthetic demo author (fictional fixture)",
+    "source_url": "synthetic:demo-zh-cadence",
+    "publication_date": "unknown",
+    "language": "zh",
+    "file": "demo-zh-cadence.txt"
+  },
+  {
+    "id": "demo-en-cost",
+    "title": "Synthetic cost worksheet",
+    "publisher": "Synthetic demo author (fictional fixture)",
+    "source_url": "synthetic:demo-en-cost",
+    "publication_date": "unknown",
+    "language": "en",
+    "file": "demo-en-cost.txt"
+  },
+  {
+    "id": "demo-zh-cost",
+    "title": "合成翻修工作表",
+    "publisher": "Synthetic demo author (fictional fixture)",
+    "source_url": "synthetic:demo-zh-cost",
+    "publication_date": "unknown",
+    "language": "zh",
+    "file": "demo-zh-cost.txt"
+  },
+  {
+    "id": "demo-en-weather",
+    "title": "Synthetic weather card",
+    "publisher": "Synthetic demo author (fictional fixture)",
+    "source_url": "synthetic:demo-en-weather",
+    "publication_date": "unknown",
+    "language": "en",
+    "file": "demo-en-weather.txt"
+  },
+  {
+    "id": "demo-zh-glossary",
+    "title": "合成术语卡",
+    "publisher": "Synthetic demo author (fictional fixture)",
+    "source_url": "synthetic:demo-zh-glossary",
+    "publication_date": "unknown",
+    "language": "zh",
+    "file": "demo-zh-glossary.txt"
+  },
+  {
+    "id": "demo-en-library",
+    "title": "Synthetic library note",
+    "publisher": "Synthetic demo author (fictional fixture)",
+    "source_url": "synthetic:demo-en-library",
+    "publication_date": "unknown",
+    "language": "en",
+    "file": "demo-en-library.txt"
+  },
+  {
+    "id": "demo-zh-library",
+    "title": "合成图书卡",
+    "publisher": "Synthetic demo author (fictional fixture)",
+    "source_url": "synthetic:demo-zh-library",
+    "publication_date": "unknown",
+    "language": "zh",
+    "file": "demo-zh-library.txt"
+  }
+]

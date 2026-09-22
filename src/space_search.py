@@ -1,0 +1,239 @@
+"""Offline passage retrieval. No network clients, model downloads, or config discovery."""
+import sys
+
+sys.dont_write_bytecode = True
+
+import argparse
+from collections import Counter
+from datetime import date
+import json
+import math
+import os
+from pathlib import Path
+import re
+import subprocess
+import unicodedata
+import uuid
+
+ROOT = Path(__file__).resolve().parents[1]
+DEMO = ROOT / "data" / "demo"
+
+
+class SafeError(Exception):
+    """Only fixed, non-sensitive messages may reach the command line."""
+
+
+def external_directory(value):
+    if not value:
+        raise SafeError("Private mode requires SPACE_DATA_DIR pointing to an existing external directory.")
+    try:
+        path = Path(value).expanduser().resolve(strict=True)
+        if not path.is_dir() or path == ROOT or ROOT in path.parents:
+            raise SafeError("Private directory must be outside the public repository.")
+        # A .git file also marks linked worktrees and submodules. Inspect all ancestors,
+        # including inaccessible/dangling markers, before asking Git about discovery.
+        for parent in (path, *path.parents):
+            if os.path.lexists(parent / ".git") or (
+                (parent / "HEAD").exists() and (parent / "objects").is_dir()
+                and (parent / "refs").is_dir()
+            ):
+                raise SafeError("Private directory must not be inside any Git working tree or bare repository.")
+        env = {k: v for k, v in os.environ.items() if not k.upper().startswith("GIT_")}
+        env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
+                   GIT_TERMINAL_PROMPT="0", LC_ALL="C")
+        check = subprocess.run(
+            ["git", "-C", str(path), "rev-parse", "--show-toplevel"],
+            capture_output=True, env=env, timeout=10,
+        )
+        if check.returncode != 128 or b"not a git repository" not in check.stderr.lower():
+            raise SafeError("Could not establish a non-Git private directory; access denied.")
+        return path
+    except SafeError:
+        raise
+    except (OSError, RuntimeError, subprocess.SubprocessError):
+        raise SafeError("Private directory validation failed; check directory access and Git installation.") from None
+
+
+def safe_file(base, relative):
+    """Reject escapes, symlinks/junctions, and alternate file streams."""
+    if not isinstance(relative, str) or not relative or ":" in relative:
+        raise SafeError("Invalid corpus file reference.")
+    part = Path(relative)
+    if part.is_absolute() or ".." in part.parts:
+        raise SafeError("Corpus files must remain within the configured data directory.")
+    candidate = base / part
+    for item in (candidate, *candidate.parents):
+        if item == base:
+            break
+        if item.is_symlink() or (hasattr(item, "is_junction") and item.is_junction()):
+            raise SafeError("Linked corpus files and directories are not permitted.")
+    resolved = candidate.resolve(strict=True)
+    if base not in resolved.parents or not resolved.is_file() or resolved.stat().st_nlink != 1:
+        raise SafeError("Corpus files must be ordinary files within the data directory.")
+    if base != DEMO.resolve():
+        external_directory(resolved.parent)
+    return resolved
+
+
+def read_json(base, name):
+    return json.loads(safe_file(base, name).read_text(encoding="utf-8"))
+
+
+def demo_directory():
+    for item in (DEMO, DEMO.parent):
+        if item.is_symlink() or (hasattr(item, "is_junction") and item.is_junction()):
+            raise SafeError("Demo directory must not link to external material.")
+    path = DEMO.resolve(strict=True)
+    if ROOT not in path.parents:
+        raise SafeError("Demo directory must be inside the public project.")
+    return path
+
+
+def load_passages(base):
+    records = read_json(base, "documents.json")
+    if not isinstance(records, list) or not records:
+        raise SafeError("Document manifest must be a nonempty JSON array.")
+    passages, seen = [], set()
+    for record in records:
+        required = ("id", "title", "publisher", "source_url", "publication_date", "language", "file")
+        if not isinstance(record, dict) or any(not isinstance(record.get(k), str) or not record[k].strip() for k in required):
+            raise SafeError("Document metadata is incomplete or invalid.")
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", record["id"]) or record["id"] in seen:
+            raise SafeError("Document IDs must be unique ASCII identifiers.")
+        if record["language"] not in ("en", "zh"):
+            raise SafeError("Document language must be en or zh.")
+        if record["publication_date"] != "unknown":
+            date.fromisoformat(record["publication_date"])
+        if not record["source_url"].startswith(("https://", "http://", "synthetic:")):
+            raise SafeError("Source URL must be HTTP(S), or synthetic: for invented fixtures.")
+        seen.add(record["id"])
+        text = safe_file(base, record["file"]).read_text(encoding="utf-8")
+        paragraphs = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
+        if not paragraphs:
+            raise SafeError("A document contains no text passages.")
+        for number, paragraph in enumerate(paragraphs, 1):
+            passages.append({"passage_id": f"{record['id']}:p{number}",
+                             "passage": paragraph,
+                             "source": {k: record[k] for k in required if k != "file"},
+                             "paragraph": number})
+    return passages
+
+
+def tokens(text):
+    text = unicodedata.normalize("NFKC", text).lower()
+    output = re.findall(r"[a-z0-9]+", text)
+    for run in re.findall(r"[\u3400-\u9fff]+", text):
+        output.extend(run)
+        output.extend(run[i:i + 2] for i in range(len(run) - 1))
+    return Counter(output)
+
+
+def search(passages, question, limit=5):
+    """Cosine TF-IDF over original passage text; stable ties by passage ID."""
+    vectors = [tokens(p["passage"]) for p in passages]
+    frequency = Counter(t for vector in vectors for t in vector)
+    idf = {t: math.log((1 + len(vectors)) / (1 + n)) + 1 for t, n in frequency.items()}
+
+    def weighted(vector):
+        values = {t: (1 + math.log(n)) * idf[t] for t, n in vector.items() if t in idf}
+        norm = math.sqrt(sum(v * v for v in values.values()))
+        return {t: v / norm for t, v in values.items()} if norm else {}
+
+    query = weighted(tokens(question))
+    ranked = []
+    for passage, vector in zip(passages, vectors):
+        score = sum(query.get(t, 0) * v for t, v in weighted(vector).items())
+        if score > 0:
+            ranked.append({**passage, "score": round(score, 8)})
+    return sorted(ranked, key=lambda row: (-row["score"], row["passage_id"]))[:limit]
+
+
+def evaluate(base, passages):
+    questions = read_json(base, "questions.json")
+    if not isinstance(questions, list) or not questions:
+        raise SafeError("Evaluation questions must be a nonempty JSON array.")
+    known = {p["passage_id"] for p in passages}
+    rows, hits, answerable, unanswerable, seen = [], 0, 0, 0, set()
+    for item in questions:
+        if (not isinstance(item, dict) or not isinstance(item.get("id"), str)
+                or item["id"] in seen or not isinstance(item.get("question"), str)
+                or not item["question"].strip() or type(item.get("answerable")) is not bool
+                or not isinstance(item.get("expected_passage_ids"), list)
+                or any(not isinstance(p, str) for p in item["expected_passage_ids"])):
+            raise SafeError("Invalid evaluation question schema.")
+        seen.add(item["id"])
+        expected = set(item["expected_passage_ids"])
+        if not expected <= known or bool(expected) != item["answerable"]:
+            raise SafeError("Evaluation evidence labels do not match the corpus.")
+        results = search(passages, item["question"])
+        retrieved = [r["passage_id"] for r in results]
+        hit = bool(expected.intersection(retrieved)) if item["answerable"] else None
+        if item["answerable"]:
+            answerable += 1
+            hits += int(hit)
+        else:
+            unanswerable += 1
+        rows.append({"question_id": item["id"], "expected_evidence_in_top_5": hit,
+                     "retrieved_passage_ids": retrieved})
+    return {"answerable_questions": answerable, "hits_at_5": hits,
+            "hit_rate_at_5": hits / answerable if answerable else None,
+            "manually_labeled_unanswerable_questions": unanswerable,
+            "note": "Unanswerable cases are inspection-only, excluded from hit rate. Search scores do not establish answerability.",
+            "questions": rows}
+
+
+def private_output(base, result):
+    external_directory(base)
+    # Exclusive creation directly under the validated root avoids following an
+    # existing output path into another directory. No logs or indexes are persisted.
+    path = base / ("result-" + uuid.uuid4().hex + ".json")
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+        json.dump(result, stream, ensure_ascii=False, indent=2)
+
+
+class Parser(argparse.ArgumentParser):
+    def error(self, message):
+        raise SafeError("Invalid command arguments. Use --help for syntax.")
+
+
+def main(argv=None):
+    try:
+        parser = Parser(description=__doc__)
+        parser.add_argument("--mode", required=True, choices=("demo", "private"))
+        parser.add_argument("command", choices=("search", "evaluate"))
+        parser.add_argument("--question", help="Search question; private queries also remain in shell history.")
+        parser.add_argument("--question-file", help="UTF-8 question file relative to the selected data directory.")
+        args = parser.parse_args(argv)
+        base = demo_directory() if args.mode == "demo" else external_directory(os.environ.get("SPACE_DATA_DIR"))
+        if args.question and args.question_file:
+            raise SafeError("Choose either --question or --question-file.")
+        question = args.question
+        if args.question_file:
+            question = safe_file(base, args.question_file).read_text(encoding="utf-8")
+        if args.command == "search" and not (question and question.strip()):
+            raise SafeError("Search requires a nonempty --question.")
+        passages = load_passages(base)
+        if args.command == "evaluate":
+            result = evaluate(base, passages)
+        else:
+            result = {"results": search(passages, question),
+                      "note": "Lexical matches only; scores do not prove answerability or factual support."}
+        if args.mode == "private":
+            private_output(base, result)
+            print("Private result saved in SPACE_DATA_DIR as result-*.json. No passages printed.")
+        else:
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    except SafeError as error:
+        print(str(error), file=sys.stderr)
+        return 2
+    except Exception:
+        # Never print exception values, paths, JSON fragments, or tracebacks.
+        print("Processing failed. Check UTF-8 input, JSON schemas, dates, and filesystem permissions locally.", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    raise SystemExit(main())

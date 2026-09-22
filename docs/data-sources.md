@@ -1,6 +1,6 @@
 # Data-source policy
 
-**Status: Planned policy; no collection has been completed.**
+**Status: Source policy for future real-corpus work.** The runnable demo includes only clearly labeled synthetic fixtures; no real source collection is included. All production documents, source metadata, indexes, and outputs must remain outside the repository in an explicitly configured non-Git directory. See the [local guide](local-retrieval.md).
 
 ## Source priorities
 
@@ -42,7 +42,7 @@ Inclusion in a research corpus does **not** grant redistribution rights. Public 
 
 Review applicable access and reuse terms before ingestion or publication. Do not bypass access restrictions. Where redistribution is not permitted or is unclear, keep source files out of the public repository and publish permitted metadata, links, and independently authored annotations instead. Review excerpts, translations, and derived artifacts separately.
 
-The default Git policy excludes local raw/processed corpora, indexes, and generated outputs. Adding any source material publicly requires an explicit rights review.
+All production corpora, indexes, and generated outputs must be stored outside every Git working tree. Ignore rules are secondary protection, not permission to store private data in Git. Adding any source material publicly requires explicit redistribution approval and rights review.
 
 ## Evidence handling
 

@@ -1,6 +1,10 @@
 # Proposed architecture
 
-**Status: Specification only.** Components below are planned and expected to evolve after a small corpus and reference questions expose practical requirements.
+**Status: Local lexical-retrieval milestone implemented; broader architecture remains proposed.**
+
+`src/space_search.py` loads a JSON manifest and UTF-8 text, splits paragraphs, builds in-memory TF-IDF vectors, and returns original passages plus source metadata. Demo mode reads only synthetic fixtures. Private mode validates an external non-Git directory and writes result JSON only there. There are no network calls, saved indexes, caches, generated answers, or translation models. See the [local guide](local-retrieval.md).
+
+Components below describe the broader planned system and are expected to evolve.
 
 ## Scope and flow
 

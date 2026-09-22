@@ -2,11 +2,26 @@
 
 > Evidence-grounded AI research for U.S.–China aerospace analysis.
 
-**Status: Early development / specification**
+**Status: Early development — local retrieval demo implemented**
 
 Bilingual Space Intelligence is an independent applied-AI engineering project exploring how multilingual retrieval, NLP, generative AI, structured evidence extraction, and evaluation can support rigorous aerospace research. **US–China Space Watch / 中美航天观察**, an independent publication, provides a real-world application environment.
 
-This repository currently contains specifications only. No retrieval pipeline, collected corpus, benchmark, deployed service, or evaluation results exist in this repository.
+This repository includes a working offline lexical-retrieval demo for English and Chinese text, source metadata, and a top-five evidence evaluation command. It uses explicitly synthetic fixtures; no real research corpus, held-out benchmark, generated answers, or deployed service is included.
+
+## Run the demo
+
+Requires Python 3.10+ and Git; no third-party Python packages or hosted API. From the repository root:
+
+```powershell
+python -B src/space_search.py --mode demo search --question "refurbishment replacement parts"
+python -B src/space_search.py --mode demo search --question "翻修 工时 零件"
+python -B src/space_search.py --mode demo evaluate
+python -B -m unittest discover -s tests -v
+```
+
+See [local setup, privacy boundary, and private corpus instructions](docs/local-retrieval.md). Private material must live in an external sibling `space-watch-private/` directory, outside every Git working tree. `.gitignore` is only a secondary safeguard. Demo mode never reads private configuration. Private mode requires `SPACE_DATA_DIR` and saves results there without printing passages.
+
+Retrieval uses English words and Chinese character sequences. It does not implement automatic translation or general cross-language semantic matching. Search scores do not establish answerability.
 
 ## The problem
 
@@ -90,7 +105,7 @@ A guiding question is:
 
 > How does launch cadence affect the economics and operational value of reusable launch systems in the United States and China?
 
-The first corpus will deliberately be small and curated. It will prioritize public primary sources wherever practical, rather than attempt to index the entire aerospace internet. Candidate source categories include NASA, FAA, other U.S. government sources, CNSA, CMSA, Chinese government sources, aerospace organizations and companies, and technical publications. No source collection has been completed.
+The first real research corpus will deliberately be small and curated. It will prioritize public primary sources wherever practical, rather than attempt to index the entire aerospace internet. Candidate source categories include NASA, FAA, other U.S. government sources, CNSA, CMSA, Chinese government sources, aerospace organizations and companies, and technical publications. No real-source collection is included; the runnable demo uses invented documents only.
 
 The research should separate observed launches and reuse events from announced cadence targets and economic assumptions. Launch counts alone cannot establish profitability; missing cost, refurbishment, utilization, and demand evidence should remain explicit.
 
@@ -111,14 +126,14 @@ Frameworks, storage systems, embedding models, and model providers have not been
 
 The project will be evaluated on evidence quality, not only on how convincing generated answers sound. Planned evaluation will examine retrieval relevance, citation correctness, claim–source consistency, evidence-status classification, unsupported-claim rate, bilingual terminology handling, entity resolution, and answer completeness.
 
-A manually verified evaluation set should include answerable, unanswerable, ambiguous, and conflicting-source questions. Metrics and results will be added only after an evaluation dataset and actual experiments exist. The [evaluation plan](docs/evaluation-plan.md) describes the proposed protocol.
+A manually verified evaluation set should include answerable, unanswerable, ambiguous, and conflicting-source questions. The implemented evaluation checks expected-passage hits in the top five on authored synthetic fixtures; unsupported questions are inspection-only. Broader metrics and real-corpus results require reviewed data and actual experiments. The [evaluation plan](docs/evaluation-plan.md) describes the proposed protocol.
 
 ## Roadmap
 
 | Phase | Planned scope |
 | --- | --- |
-| Phase 0 — Specification | Repository, architecture, evidence schema, source policy, and evaluation design. Current phase. |
-| Phase 1 — Minimal retrieval system | Ingest a small corpus, parse metadata, retrieve relevant passages, and show citations. |
+| Phase 0 — Specification | Initial repository, architecture, evidence schema, source policy, and evaluation design documented. |
+| Phase 1 — Minimal retrieval system | Local text ingestion, metadata, passage retrieval, and source references implemented for synthetic demo data; real-corpus validation remains. |
 | Phase 2 — Grounded answer generation | Structured claims, evidence-status classification, and bilingual support. |
 | Phase 3 — Evaluation | Manually verified question set, retrieval and citation evaluation, and unsupported-claim testing. |
 | Phase 4 — Expansion | Larger corpus, entity normalization, terminology alignment, and more sophisticated research workflows. |
@@ -139,6 +154,7 @@ This is an independent personal project, not an official University of Colorado 
 
 ## Repository guide
 
+- [Local retrieval guide](docs/local-retrieval.md): runnable commands, private mode, and evaluation schemas
 - [Architecture](docs/architecture.md): proposed components and evidence flow
 - [Roadmap](docs/roadmap.md): phased scope and completion criteria
 - [Evaluation plan](docs/evaluation-plan.md): proposed annotation and assessment protocol

@@ -1,6 +1,8 @@
 # Evaluation plan
 
-**Status: Proposed protocol.** No benchmark, experiments, metrics, or results have been produced.
+**Status: Synthetic retrieval smoke evaluation implemented; broader protocol proposed.**
+
+The current command evaluates six authored answerable fixture questions using expected-passage hit@5, plus two manually labeled unsupported questions for inspection only. These are not held-out research benchmarks. See the [local guide](local-retrieval.md) for exact scoring, commands, and a private ten-question workflow. Citation entailment, evidence-status classification, and generated-claim evaluation below remain future work.
 
 The objective is to measure whether the system retrieves relevant evidence and represents it faithfully. Persuasive prose is not evidence of correctness.
 

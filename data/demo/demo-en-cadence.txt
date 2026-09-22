@@ -1,0 +1,3 @@
+This is invented demo text, not a report about a real program. The fictional Amber exercise records launch cadence and a reusable vehicle inspection checklist.
+
+The fictional checklist asks reviewers to distinguish a completed inspection from a targeted inspection date.

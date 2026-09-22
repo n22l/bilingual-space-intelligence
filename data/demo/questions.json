@@ -1,0 +1,62 @@
+[
+  {
+    "id": "en-cadence",
+    "question": "launch cadence reusable vehicle inspection",
+    "answerable": true,
+    "expected_passage_ids": [
+      "demo-en-cadence:p1"
+    ]
+  },
+  {
+    "id": "zh-cadence",
+    "question": "发射频率 可重复使用 检查清单",
+    "answerable": true,
+    "expected_passage_ids": [
+      "demo-zh-cadence:p1"
+    ]
+  },
+  {
+    "id": "en-cost",
+    "question": "refurbishment replacement parts worksheet",
+    "answerable": true,
+    "expected_passage_ids": [
+      "demo-en-cost:p1"
+    ]
+  },
+  {
+    "id": "zh-cost",
+    "question": "翻修 工时 零件",
+    "answerable": true,
+    "expected_passage_ids": [
+      "demo-zh-cost:p1"
+    ]
+  },
+  {
+    "id": "en-status",
+    "question": "completed inspection targeted inspection date",
+    "answerable": true,
+    "expected_passage_ids": [
+      "demo-en-cadence:p2"
+    ]
+  },
+  {
+    "id": "zh-status",
+    "question": "已经完成的检查 计划中的检查日期",
+    "answerable": true,
+    "expected_passage_ids": [
+      "demo-zh-cadence:p2"
+    ]
+  },
+  {
+    "id": "missing-profit",
+    "question": "What exact profit did the reusable vehicle earn?",
+    "answerable": false,
+    "expected_passage_ids": []
+  },
+  {
+    "id": "missing-cost",
+    "question": "真实翻修成本是多少？",
+    "answerable": false,
+    "expected_passage_ids": []
+  }
+]

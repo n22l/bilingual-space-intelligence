@@ -24,3 +24,14 @@ outputs/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Secondary safeguards only. Private material must live OUTSIDE this repository.
+space-watch-private/
+private/
+*.log
+result-*.json
+*.sqlite
+*.sqlite3
+indexes/
+embeddings/
+secrets/

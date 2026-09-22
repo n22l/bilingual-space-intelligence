@@ -1,12 +1,12 @@
 # Roadmap
 
-**Current stage: Phase 0 — Specification.** This roadmap describes intended work, not completed functionality. It carries no delivery-date commitments.
+**Current stage: Phase 1 — Minimal local retrieval milestone.** Text ingestion, metadata, paragraph retrieval, synthetic demo evaluation, and external private-mode boundaries are implemented. Real primary-source corpus curation and validation remain outstanding. Later phases remain planned, with no delivery-date commitments.
 
 ## Phase 0 — Specification
 
 Define the architecture, conceptual evidence schema, status taxonomy, source policy, and evaluation design. This repository supplies an initial draft of each.
 
-Before Phase 1, settle the corpus boundaries, source rights review, metadata conventions, and annotation rules. No corpus or evaluation dataset exists yet.
+Before real-corpus use, settle the corpus boundaries, source rights review, metadata conventions, and annotation rules. Only synthetic fixtures and smoke questions exist; no real research corpus or reviewed research benchmark is included.
 
 ## Phase 1 — Minimal retrieval system
 
@@ -44,4 +44,4 @@ Knowledge graphs, multimodal document/image retrieval, media provenance, and aut
 
 ## Recommended next task
 
-Define and manually review a v0.1 corpus manifest and a small set of research questions for the reusable-launch use case. Specify inclusion dates, languages, document formats, rights constraints, expected evidence locations, and unanswerable cases before implementing ingestion.
+Privately curate ten primary-source documents and ten manually verified questions (including two unsupported cases) for the reusable-launch use case. Specify inclusion dates, languages, document formats, rights constraints, expected evidence locations, and unanswerable cases before using real research inputs.
